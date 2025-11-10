@@ -1,11 +1,22 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
-# log_util.py
 import logging
 import os
 from rich.logging import RichHandler  # Rich handler for colored console output
+from pydantic import BaseModel
 
+class Settings(BaseModel):
+    tweet_file_path: str = "data/tweets.json"
+    extracted_tweet_path:str = "data/extracted_tweets.csv"
+    analyzed_tweet_path:str = "data/analyzed_tweets.csv"
+    base_twitter_url: str = "https://x.com"
+    x_username: str = "@_Ojogu"
+    batch_size: int = 10
+    checkpoint_path: str = "data/checkpoint.txt"
 
+settings=Settings()
+    
+    
 class Config(BaseSettings):
     GOOGLE_API_KEY: str 
     MODEL_NAME: str 
@@ -74,3 +85,8 @@ def setup_logger(name: str, file_path: str, level=logging.DEBUG) -> logging.Logg
         logger.addHandler(console_handler)
 
     return logger
+
+
+
+
+

@@ -4,7 +4,7 @@ from google import genai
 from config import env_config
 from exception import EnvironmentVariableError
 from prompt import SYSTEM_PROMPT
-
+from schema import AgentResponse
 def retry_with_backoff(max_retries: int = 3, initial_delay: float = 1.0):
     """Retry decorator with exponential backoff for transient errors"""
 
@@ -60,12 +60,14 @@ class AI_Setup():
 
         
     
-    def parse_tweets(self, tweets:dict):
+    def parse_tweets(self, tweets:dict)->dict:
         response = self.client.models.generate_content(
             model=env_config.MODEL_NAME,
             contents=tweets
         )
-        return response.text
+        validated_response = AgentResponse(response.text).model_dump()
+        return validated_response
+    
     
 
 
