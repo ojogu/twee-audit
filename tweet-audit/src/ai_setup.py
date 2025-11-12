@@ -1,10 +1,14 @@
 from functools import wraps
 import time
 from google import genai
+from google.genai.types import GenerateContentConfig
 from config import env_config
 from exception import EnvironmentVariableError
 from prompt import SYSTEM_PROMPT
 from schema import AgentResponse
+from config import setup_logger
+import json
+from utils import parse_and_clean_json
 def retry_with_backoff(max_retries: int = 3, initial_delay: float = 1.0):
     """Retry decorator with exponential backoff for transient errors"""
 
@@ -47,26 +51,81 @@ def retry_with_backoff(max_retries: int = 3, initial_delay: float = 1.0):
     return decorator
 
 
+logger = setup_logger(__name__, "ai_setup.log")
+
 class AI_Setup():
     def __init__(self):
         self.gemini_key = env_config.GOOGLE_API_KEY
         if not self.gemini_key:
-            raise EnvironmentVariableError("google api key not found in enironment variable")
+            logger.error("Google API key not found in environment variables.")
+            raise EnvironmentVariableError("Google API key not found in environment variable")
+        logger.info("Google API key successfully loaded.")
+        
         self.client = genai.Client(api_key=self.gemini_key)
-        self.config = self.client.types.GenerateContentConfig(
-        system_instruction=SYSTEM_PROMPT
-    )
+        logger.info("Google Gemini client initialized.")
         
+        self.config = GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT
+            )
+        logger.info("Gemini content generation configuration set with system instruction.")
 
-        
-    
-    def parse_tweets(self, tweets:dict)->dict:
-        response = self.client.models.generate_content(
-            model=env_config.MODEL_NAME,
-            contents=tweets
-        )
-        validated_response = AgentResponse(response.text).model_dump()
-        return validated_response
+    @retry_with_backoff()
+    def analysis_tweets(self, tweets: dict) -> dict:
+        try:
+            #convert the dicts to a string
+            input_string = f"TWEET_ID: {tweets["id"]}\nTWEET_TEXT: {tweets["content"]}"
+            logger.info(f"Sending request to Gemini model: {env_config.MODEL_NAME}")
+            logger.info(f"data: {type(tweets)}")
+            # Assuming 'tweets' is already in a format suitable for the model
+            response = self.client.models.generate_content(
+                model=env_config.MODEL_NAME,
+                contents=input_string,
+                config=self.config # Use the configured generation_config
+            )
+            logger.info("Received response from Gemini model.")
+            
+            # Log the raw response text for debugging if needed
+            logger.debug(f"Raw Gemini response: {response.text}")
+
+            try:
+                parsed = parse_and_clean_json(response.text)
+                logger.debug(f"cleaned response: {parsed}")
+            except json.JSONDecodeError as e:
+                logger.error(f"Failed to decode JSON from Gemini response: {e}")
+                raise
+
+            if isinstance(parsed, list):
+                if len(parsed) == 0:
+                    logger.error("Gemini returned an empty list.")
+                    raise Exception("Empty Gemini response list")
+                if len(parsed) > 1:
+                    logger.error("Expected a single object in Gemini response list but got multiple items.")
+                    raise Exception("Expected single object in Gemini response list")
+                try:
+                    validated = AgentResponse.model_validate(parsed[0]).model_dump()
+                except Exception as e:
+                    logger.exception(f"Failed to validate response item: {e}")
+                    raise
+                logger.info("Gemini response successfully validated.")
+                return validated
+            elif isinstance(parsed, dict):
+                try:
+                    validated = AgentResponse.model_validate(parsed).model_dump()
+                except Exception as e:
+                    logger.exception(f"Failed to validate response dict: {e}")
+                    raise
+                logger.info("Gemini response successfully validated.")
+                return validated
+            else:
+                logger.error("Unexpected Gemini response format; expected list or dict.")
+                raise Exception("Unexpected Gemini response format")
+
+        except EnvironmentVariableError as e:
+            logger.error(f"Environment variable error: {e}")
+            raise
+        except Exception as e:
+            logger.exception(f"An error occurred during Gemini content generation or response validation: {e}")
+            raise Exception(f"Failed to parse tweets with AI: {e}") from e
     
     
 

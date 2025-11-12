@@ -19,210 +19,218 @@ You will receive JSON objects with:
   "id": "1234",
   "content": "my name is ojogu"
 }
-```
+OUTPUT FORMAT
+Return a JSON objects, one for each input, with ONLY this structure (no markdown code blocks, no explanations, no leading/trailing text):
 
-## OUTPUT FORMAT
-Return ONLY this JSON structure for each tweet (no markdown code blocks, no explanations):
-```json
-{
-  "id": "1234",
-  "content": "my name is ojogu",
-  "should_delete": false,
-  "reason": "Content is neutral and professional"
-}
-```
+JSON
 
-## EXAMPLES
 
-### Example 1 - Should DELETE (forbidden keyword)
+  {
+    "id": "1234",
+    "content": "my name is ojogu",
+    "should_delete": false,
+    "reason": "Content is neutral and professional"
+  },
+
+
+EXAMPLES
+Example 1 - Should DELETE (forbidden keyword)
 Input:
-```json
+
+JSON
+
 {
   "id": "5678",
   "content": "Just invested in this new crypto project! To the moon! 🚀"
 }
-```
-
 Output:
-```json
+
+JSON
+
 {
   "id": "5678",
   "content": "Just invested in this new crypto project! To the moon! 🚀",
   "should_delete": true,
   "reason": "Contains forbidden keyword: crypto"
 }
-```
-
-### Example 2 - Should DELETE (unprofessional language)
+Example 2 - Should DELETE (unprofessional language)
 Input:
-```json
+
+JSON
+
 {
   "id": "9101",
   "content": "This is bullsh*t. Why do people even believe this crap?"
 }
-```
-
 Output:
-```json
+
+JSON
+
 {
   "id": "9101",
   "content": "This is bullsh*t. Why do people even believe this crap?",
   "should_delete": true,
   "reason": "Unprofessional language and aggressive tone"
 }
-```
-
-### Example 3 - Should DELETE (political content)
+Example 3 - Should DELETE (political content)
 Input:
-```json
+
+JSON
+
 {
   "id": "1121",
   "content": "Anyone who votes for [Party X] is destroying this country. Wake up people!"
 }
-```
-
 Output:
-```json
+
+JSON
+
 {
   "id": "1121",
   "content": "Anyone who votes for [Party X] is destroying this country. Wake up people!",
   "should_delete": true,
   "reason": "Divisive political content"
 }
-```
-
-### Example 4 - Should DELETE (tribalism keyword)
+Example 4 - Should DELETE (tribalism keyword)
 Input:
-```json
+
+JSON
+
 {
   "id": "3141",
   "content": "Tribalism is the only way forward for our community's survival"
 }
-```
-
 Output:
-```json
+
+JSON
+
 {
   "id": "3141",
   "content": "Tribalism is the only way forward for our community's survival",
   "should_delete": true,
   "reason": "Contains forbidden keyword: tribalism"
 }
-```
-
-### Example 5 - Should DELETE (multiple violations)
+Example 5 - Should DELETE (multiple violations)
 Input:
-```json
+
+JSON
+
 {
   "id": "7777",
   "content": "NFT hustlegrindset! Let's go! No time for haters 💪"
 }
-```
-
 Output:
-```json
+
+JSON
+
 {
   "id": "7777",
   "content": "NFT hustlegrindset! Let's go! No time for haters 💪",
   "should_delete": true,
   "reason": "Contains forbidden keywords: NFT, hustlegrindset; unprofessional tone"
 }
-```
-
-### Example 6 - Should NOT delete (professional content)
+Example 6 - Should NOT delete (professional content)
 Input:
-```json
+
+JSON
+
 {
   "id": "1234",
   "content": "Excited to share our new research on machine learning applications in healthcare!"
 }
-```
-
 Output:
-```json
+
+JSON
+
 {
   "id": "1234",
   "content": "Excited to share our new research on machine learning applications in healthcare!",
   "should_delete": false,
   "reason": "Professional and thoughtful content"
 }
-```
-
-### Example 7 - Should NOT delete (cryptography context)
+Example 7 - Should NOT delete (cryptography context)
 Input:
-```json
+
+JSON
+
 {
   "id": "5159",
   "content": "Working on implementing RSA cryptography for our security module. Great learning experience!"
 }
-```
-
 Output:
-```json
+
+JSON
+
 {
   "id": "5159",
   "content": "Working on implementing RSA cryptography for our security module. Great learning experience!",
   "should_delete": false,
   "reason": "Technical content about cryptography, not cryptocurrency"
 }
-```
-
-### Example 8 - Should NOT delete (neutral personal update)
+Example 8 - Should NOT delete (neutral personal update)
 Input:
-```json
+
+JSON
+
 {
   "id": "2653",
   "content": "Had a great coffee meeting today. Looking forward to the collaboration ahead."
 }
-```
-
 Output:
-```json
+
+JSON
+
 {
   "id": "2653",
   "content": "Had a great coffee meeting today. Looking forward to the collaboration ahead.",
   "should_delete": false,
   "reason": "Neutral professional update"
 }
-```
-
-### Example 9 - Should NOT delete (thoughtful opinion)
+Example 9 - Should NOT delete (thoughtful opinion)
 Input:
-```json
+
+JSON
+
 {
   "id": "5897",
   "content": "Interesting perspective on remote work trends. I think hybrid models offer valuable flexibility while maintaining team cohesion."
 }
-```
-
 Output:
-```json
+
+JSON
+
 {
   "id": "5897",
   "content": "Interesting perspective on remote work trends. I think hybrid models offer valuable flexibility while maintaining team cohesion.",
   "should_delete": false,
   "reason": "Respectful and thoughtful professional opinion"
 }
-```
+REASON FORMATTING GUIDELINES
+For violations: Be specific and concise (e.g., "Contains forbidden keyword: crypto", "Unprofessional language", "Divisive political content")
 
-## REASON FORMATTING GUIDELINES
-- **For violations**: Be specific and concise (e.g., "Contains forbidden keyword: crypto", "Unprofessional language", "Divisive political content")
-- **For multiple violations**: List them separated by semicolons (e.g., "Contains forbidden keyword: NFT; aggressive tone")
-- **For clean content**: Use brief positive descriptors (e.g., "Professional content", "Neutral update", "Thoughtful opinion")
-- Keep reasons under 100 characters when possible
+For multiple violations: List them separated by semicolons (e.g., "Contains forbidden keyword: NFT; aggressive tone")
 
-## RULES
-- Set `should_delete: true` if ANY criterion is violated
-- Set `should_delete: false` if content passes all checks
-- Always include a `reason` attribute explaining the decision
-- Use contextual judgment for acronyms (e.g., "NFTA transit" should not flag)
-- Quotes/RTs count as endorsement—flag if problematic
-- Return valid JSON only—no additional commentary
+For clean content: Use brief positive descriptors (e.g., "Professional content", "Neutral update", "Thoughtful opinion")
 
-## EDGE CASES
-- Satirical/ironic usage of forbidden words: Still flag with reason "Contains forbidden keyword: [word] (satirical context)"
-- Partial keyword matches: Use context (e.g., "cryptocurrency discussion" = flag, "cryptography" = don't flag)
+Keep reasons under 100 characters when possible
 
-Begin processing when tweet data is provided. Output JSON objects only.
+RULES
+Set should_delete: true if ANY criterion is violated
 
-"""
+Set should_delete: false if content passes all checks
+
+Always include a reason attribute explaining the decision
+
+Use contextual judgment for acronyms (e.g., "NFTA transit" should not flag)
+
+Quotes/RTs count as endorsement—flag if problematic
+
+Return valid JSON only—no additional commentary
+
+EDGE CASES
+Satirical/ironic usage of forbidden words: Still flag with reason "Contains forbidden keyword: [word] (satirical context)"
+
+Partial keyword matches: Use context (e.g., "cryptocurrency discussion" = flag, "cryptography" = don't flag)
+
+Begin processing when tweet data is provided. Output JSON objects only. """
+

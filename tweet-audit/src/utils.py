@@ -1,4 +1,6 @@
+import json
 from pathlib import Path
+import re
 from config import setup_logger
 
 logger = setup_logger(__name__, "utils.log")
@@ -30,3 +32,55 @@ def ensure_dir_and_file(path_str: str) -> tuple[bool, bool]:
         logger.info(f"File already exists: {path}")
     
     return dir_created, file_created
+
+
+def parse_and_clean_json(json_string):
+    """
+    Parse a JSON string into a dictionary with automatic cleaning.
+    
+    Handles:
+    - Markdown code fences (```json, ```)
+    - Extra whitespace
+    - Leading/trailing whitespace
+    - Common formatting issues
+    
+    Args:
+        json_string (str): The JSON string to parse
+        
+    Returns:
+        dict: Parsed JSON as a dictionary
+        
+    Raises:
+        ValueError: If JSON parsing fails after cleaning
+    """
+    if not isinstance(json_string, str):
+        raise TypeError("Input must be a string")
+    
+    # Remove leading/trailing whitespace
+    cleaned = json_string.strip()
+    
+    # Remove markdown code fences (```json, ```, ```python, etc.)
+    cleaned = re.sub(r'^```(?:json|python|javascript|js)?\s*\n?', '', cleaned)
+    cleaned = re.sub(r'\n?```\s*$', '', cleaned)
+    
+    # Remove any remaining backticks at start/end
+    cleaned = cleaned.strip('`').strip()
+    
+    # Normalize whitespace (multiple spaces/newlines to single space)
+    # But preserve structure inside the JSON
+    cleaned = re.sub(r'\s+', ' ', cleaned)
+    
+    # Try to parse the cleaned JSON
+    try:
+        parsed = json.loads(cleaned)
+        return parsed
+    except json.JSONDecodeError as e:
+        # If parsing fails, try one more time with more aggressive cleaning
+        # Remove all whitespace except within strings
+        try:
+            # This is a last resort - removes formatting but may help
+            compressed = ''.join(cleaned.split())
+            parsed = json.loads(compressed)
+            return parsed
+        except json.JSONDecodeError:
+            raise ValueError(f"Failed to parse JSON: {e}") from e

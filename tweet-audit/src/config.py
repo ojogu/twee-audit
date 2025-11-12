@@ -6,12 +6,12 @@ from rich.logging import RichHandler  # Rich handler for colored console output
 from pydantic import BaseModel
 
 class Settings(BaseModel):
-    tweet_file_path: str = "data/tweets.json"
+    tweet_json_path: str = "data/tweets.json"
     extracted_tweet_path:str = "data/extracted_tweets.csv"
     analyzed_tweet_path:str = "data/analyzed_tweets.csv"
     base_twitter_url: str = "https://x.com"
     x_username: str = "@_Ojogu"
-    batch_size: int = 10
+    batch_size: int = 2
     checkpoint_path: str = "data/checkpoint.txt"
 
 settings=Settings()

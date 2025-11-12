@@ -13,7 +13,7 @@ class AgentResponse(BaseModel):
     
 class AnalysisResult(BaseModel):
     tweet_url: str
-    should_delete: bool = False
+    deleted: bool = False
 
 
 class AnalysisResponse(BaseModel):
@@ -22,4 +22,12 @@ class AnalysisResponse(BaseModel):
 class Settings():
     tweets_archive_path: str = "data/tweets.json"
     base_twitter_url: str = "https://x.com"
+    
+    
+class Result(BaseModel):
+    success: bool = False
+    count: int = 0
+    error_type: str = ""
+    error_message: str = ""
+    
     
