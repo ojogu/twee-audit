@@ -79,7 +79,7 @@ class Application():
                                     data["tweet_url"] = url
                                     data["deleted"] = validated_result.model_dump()["should_delete"]
                                     
-                                    
+                                    logger.debug(f"file analyzed by gemini: {validated_result.content}")
                                     writer.write_analysed_tweets(**data)
                             except Exception as e:
                                 logger.error(
