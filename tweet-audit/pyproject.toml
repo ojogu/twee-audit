@@ -9,3 +9,42 @@ dependencies = [
     "pydantic-settings>=2.11.0",
     "rich>=14.2.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.1",
+]
+
+[tool.pytest.ini_options]
+# This line defines the start of the pytest configuration section within a pyproject.toml file.
+
+asyncio_mode = "auto"
+# Configures how pytest handles asynchronous functions and fixtures.
+# "auto" (default) attempts to automatically detect and run async tests/fixtures.
+# Other options include "strict" (requires explicit markers) and "none" (disables asyncio support).
+
+addopts = ["-v", "--tb=short"]
+# Specifies command-line options that pytest should always apply when run.
+# -v: increases verbosity, showing detailed information for each test.
+# --tb=short: sets the traceback style to 'short', making failure reports more concise and readable.
+
+testpaths = ["src/tests", "src"]
+# Defines the directories where pytest will search for test files.
+# pytest will look for tests in the 'src/tests' directory AND the 'src' directory itself.
+
+python_files = ["test_*.py", "*_test.py"]
+# Specifies the glob patterns used to identify test files within the 'testpaths' directories.
+# It tells pytest to look for files starting with 'test_' or ending with '_test.py'.
+
+python_functions = ["test_*"]
+# Defines the naming convention for test functions within the test files.
+# Only functions that start with 'test_' will be collected as tests.
+
+python_classes = ["Test*"]
+# Defines the naming convention for test classes within the test files.
+# Only classes that start with 'Test' and do NOT have an __init__ method will be collected.
+
+pythonpath = ["."]
+# Adds the specified directories to Python's import path (sys.path) before collecting tests.
+# "." adds the current working directory (usually the root directory) to the path,
+# allowing imports of modules from your main project source code during testing.

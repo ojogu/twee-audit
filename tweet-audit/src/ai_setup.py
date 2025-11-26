@@ -9,6 +9,9 @@ from schema import AgentResponse
 from config import setup_logger
 import json
 from utils import parse_and_clean_json
+from pydantic import ValidationError
+
+
 def retry_with_backoff(max_retries: int = 3, initial_delay: float = 1.0):
     """Retry decorator with exponential backoff for transient errors"""
 
@@ -33,6 +36,7 @@ def retry_with_backoff(max_retries: int = 3, initial_delay: float = 1.0):
                             "quota",
                             "503",
                             "429",
+                            "unavailable",
                             "temporarily unavailable",
                         ]
                     ) #converts error to str, Determine if the error is retryable. a generator expression that loops through each keyword in that list and checks if it appears inside the error_str.
@@ -72,11 +76,9 @@ class AI_Setup():
     @retry_with_backoff()
     def analysis_tweets(self, tweets: dict) -> dict:
         try:
-            #convert the dicts to a string
+            #convert the dict to a string for compartiablity with gemini
             input_string = f"TWEET_ID: {tweets["id"]}\nTWEET_TEXT: {tweets["content"]}"
-            logger.info(f"Sending request to Gemini model: {env_config.MODEL_NAME}")
-            logger.info(f"data: {type(tweets)}")
-            # Assuming 'tweets' is already in a format suitable for the model
+            
             response = self.client.models.generate_content(
                 model=env_config.MODEL_NAME,
                 contents=input_string,
@@ -84,7 +86,6 @@ class AI_Setup():
             )
             logger.info("Received response from Gemini model.")
             
-            # Log the raw response text for debugging if needed
             logger.debug(f"Raw Gemini response: {response.text}")
 
             try:
@@ -94,31 +95,13 @@ class AI_Setup():
                 logger.error(f"Failed to decode JSON from Gemini response: {e}")
                 raise
 
-            if isinstance(parsed, list):
-                if len(parsed) == 0:
-                    logger.error("Gemini returned an empty list.")
-                    raise Exception("Empty Gemini response list")
-                if len(parsed) > 1:
-                    logger.error("Expected a single object in Gemini response list but got multiple items.")
-                    raise Exception("Expected single object in Gemini response list")
-                try:
-                    validated = AgentResponse.model_validate(parsed[0]).model_dump()
-                except Exception as e:
-                    logger.exception(f"Failed to validate response item: {e}")
-                    raise
-                logger.info("Gemini response successfully validated.")
-                return validated
-            elif isinstance(parsed, dict):
-                try:
-                    validated = AgentResponse.model_validate(parsed).model_dump()
-                except Exception as e:
-                    logger.exception(f"Failed to validate response dict: {e}")
-                    raise
-                logger.info("Gemini response successfully validated.")
-                return validated
-            else:
-                logger.error("Unexpected Gemini response format; expected list or dict.")
-                raise Exception("Unexpected Gemini response format")
+            try:
+                validated = AgentResponse.model_validate(parsed).model_dump()
+            except Exception as e:
+                logger.exception(f"Failed to validate response dict: {e}")
+                raise
+            logger.info("Gemini response successfully validated.")
+            return validated
 
         except EnvironmentVariableError as e:
             logger.error(f"Environment variable error: {e}")
