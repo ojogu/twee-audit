@@ -3,7 +3,7 @@ import time
 from google import genai
 from google.genai.types import GenerateContentConfig
 from config import env_config
-from exception import EnvironmentVariableError
+from .application_exception import EnvironmentVariableError
 from prompt import SYSTEM_PROMPT
 from schema import AgentResponse
 from config import setup_logger
