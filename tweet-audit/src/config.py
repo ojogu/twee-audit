@@ -1,3 +1,5 @@
+#config file handling env variables, path/dir and logging
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pathlib import Path
 import logging
@@ -33,22 +35,22 @@ env_config = Config()
 
 
 # Determine the root directory of the project. 
-# Assumes this script is in: tweet-audit/src/config.py
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOGS_DIR = os.path.join(ROOT_DIR, "logs")
 
 
-def setup_logger(name: str, file_path: str, level=logging.DEBUG) -> logging.Logger:
+def setup_logger(name: str, file_path: str, level=logging.DEBUG, console_logging: bool = True) -> logging.Logger:
     """
     Sets up a logger with:
     - File logging (plain text, no color)
-    - RichHandler for colored console output
+    - RichHandler for colored console output (optional)
     Only sets up handlers once per logger.
 
     Args:
         name (str): Logger name (usually module name).
         file_path (str): Log file name to store logs.
         level (int): Logging level (e.g., logging.INFO).
+        console_logging (bool): Enable console output. Defaults to True.
 
     Returns:
         logging.Logger: Configured logger instance.
@@ -69,20 +71,18 @@ def setup_logger(name: str, file_path: str, level=logging.DEBUG) -> logging.Logg
             datefmt='%Y-%m-%d %H:%M:%S'
         )
         file_handler.setFormatter(file_formatter)
-
-        # Setup rich console handler (colored, timestamped output)
-        console_handler = RichHandler(
-            rich_tracebacks=True,     # Enable colorful tracebacks
-            show_time=True,           # Show time column
-            show_level=True,          # Show level column
-            show_path=True            # Show path to source
-        )
-        console_handler.setLevel(level)
-        # No need to set a formatter; RichHandler handles formatting
-
-        # Add both handlers
         logger.addHandler(file_handler)
-        logger.addHandler(console_handler)
+
+        # Setup rich console handler (colored, timestamped output) if enabled
+        if console_logging:
+            console_handler = RichHandler(
+                rich_tracebacks=True,
+                show_time=True,
+                show_level=True,
+                show_path=True
+            )
+            console_handler.setLevel(level)
+            logger.addHandler(console_handler)
 
     return logger
 

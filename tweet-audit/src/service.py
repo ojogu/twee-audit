@@ -1,16 +1,18 @@
+#this is the service class that handles the tweet processing
+
+
 from config import settings
 from parser import Checkpoint, JsonParser, CSVparser, CSVwriter
 from ai_setup import AI_Setup
-from config import setup_logger
 from schema import AgentResponse, Result
 
+from config import setup_logger
 logger = setup_logger(__name__, "main.log")
 
 
-class Application():
+class Service():
     def __init__(self):
         self.json_parser = JsonParser(settings.tweet_json_path)
-        # self.csv_parser = CSVparser(settings.extracted_tweet_path)
         self._analyzer=None
     
     @property
@@ -126,7 +128,7 @@ class Application():
     
             
 if __name__ == "__main__":
-    app = Application()
+    app = Service()
     # data = app.extract_tweet_from_json()
     # app.write_tweets_from_json_to_csv(data)
     # app.read_processed_csv_waiting_for_analysis()

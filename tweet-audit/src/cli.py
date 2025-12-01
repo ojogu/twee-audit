@@ -1,3 +1,5 @@
+#the cli module that handles user interaction with the application
+
 import argparse
 from application import Application
 def main():

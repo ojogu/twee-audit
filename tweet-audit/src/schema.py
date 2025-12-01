@@ -1,3 +1,4 @@
+#schema for the application to serelize and deserelize data for proper data/input validation
 from pydantic import BaseModel
 
 class Tweets(BaseModel):

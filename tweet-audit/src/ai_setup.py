@@ -1,3 +1,5 @@
+#this module handles Ai integration with gemini, handling retry logic 
+
 from functools import wraps
 import time
 from google import genai

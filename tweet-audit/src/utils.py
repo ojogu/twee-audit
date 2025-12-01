@@ -1,3 +1,5 @@
+#util file to handle dir/file exist, clean json file from gemini
+
 import json
 from pathlib import Path
 import re
@@ -35,24 +37,7 @@ def ensure_dir_and_file(path_str: str) -> tuple[bool, bool]:
 
 
 def parse_and_clean_json(json_string):
-    """
-    Parse a JSON string into a dictionary with automatic cleaning.
-    
-    Handles:
-    - Markdown code fences (```json, ```)
-    - Extra whitespace
-    - Leading/trailing whitespace
-    - Common formatting issues
-    
-    Args:
-        json_string (str): The JSON string to parse
-        
-    Returns:
-        dict: Parsed JSON as a dictionary
-        
-    Raises:
-        ValueError: If JSON parsing fails after cleaning
-    """
+
     if not isinstance(json_string, str):
         raise TypeError("Input must be a string")
     

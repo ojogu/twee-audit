@@ -1,4 +1,4 @@
-import os
+#this module handle parsing of files, read and write operations
 from schema import Tweets, AnalysisResult
 from abc import ABC, abstractmethod
 import json 
