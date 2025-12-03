@@ -7,3 +7,5 @@ class BaseExceptionClass(Exception):
 
 class EnvironmentVariableError(BaseExceptionClass):
     pass 
+class APIerror(BaseExceptionClass):
+    pass 

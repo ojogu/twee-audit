@@ -1,20 +1,19 @@
-#this is the service class that handles the tweet processing
+# this is the service class that handles the tweet processing
 
 
-from config import settings
-from parser import Checkpoint, JsonParser, CSVparser, CSVwriter
 from ai_setup import AI_Setup
+from config import settings, setup_logger
+from parser import Checkpoint, CSVparser, CSVwriter, JsonParser
 from schema import AgentResponse, Result
 
-from config import setup_logger
-logger = setup_logger(__name__, "main.log")
+logger = setup_logger(__name__, "service.log")
 
 
-class Service():
+class AuditService:
     def __init__(self):
         self.json_parser = JsonParser(settings.tweet_json_path)
-        self._analyzer=None
-    
+        self._analyzer = None
+
     @property
     def analyzer(self) -> AI_Setup:
         if self._analyzer is None:
@@ -36,7 +35,9 @@ class Service():
             with CSVwriter(settings.extracted_tweet_path, append=True) as writer:
                 writer.write_tweets(processed_tweets)
 
-            logger.info(f"Wrote {len(processed_tweets)} tweets to CSV: {settings.extracted_tweet_path}")
+            logger.info(
+                f"Wrote {len(processed_tweets)} tweets to CSV: {settings.extracted_tweet_path}"
+            )
             return Result(success=True, count=len(processed_tweets))
         except Exception as e:
             logger.error(f"Failed to extract/write tweets: {e}", exc_info=True)
@@ -46,12 +47,11 @@ class Service():
                 error_type="extract_failed",
                 error_message=str(e),
             )
-            
+
     def read_processed_csv_waiting_for_analysis(self):
         data = CSVparser(settings.extracted_tweet_path)
         return data.parse()
-    
-    
+
     def analyze_tweets(self):
         try:
             logger.info(f"Loading tweets from {settings.extracted_tweet_path}")
@@ -79,30 +79,39 @@ class Service():
 
                         logger.info(
                             f"Processing batch {batch_num}/{total_batches} "
-                            f"(tweets {i+1}-{min(i+len(batch), len(tweets))} of {len(tweets)})"
+                            f"(tweets {i + 1}-{min(i + len(batch), len(tweets))} of {len(tweets)})"
                         )
 
                         for tweet in batch:
                             try:
-                                result = self.analyzer.analysis_tweets(tweet.model_dump()) 
-                                logger.info(type(result))  
+                                result = self.analyzer.analysis_tweets(
+                                    tweet.model_dump()
+                                )
+                                logger.info(type(result))
                                 validated_result = AgentResponse(**result)
-                                logger.debug(f"Tweet {validated_result.id}: {validated_result.should_delete}")
+                                logger.debug(
+                                    f"Tweet {validated_result.id}: {validated_result.should_delete}"
+                                )
                                 analyzed_count += 1
 
                                 if validated_result.should_delete:
-                                    #construct a url
+                                    # construct a url
                                     data = {}
                                     x_id = validated_result.model_dump()["id"]
                                     url = f"{settings.base_twitter_url}/{settings.x_username}/status/{x_id}"
                                     data["tweet_url"] = url
-                                    data["deleted"] = validated_result.model_dump()["should_delete"]
-                                    
-                                    logger.debug(f"file analyzed by gemini: {validated_result.content}")
+                                    data["deleted"] = validated_result.model_dump()[
+                                        "should_delete"
+                                    ]
+
+                                    logger.debug(
+                                        f"file analyzed by gemini: {validated_result.content}"
+                                    )
                                     writer.write_analysed_tweets(**data)
                             except Exception as e:
                                 logger.error(
-                                    f"Failed to analyze tweet {tweet.id}: {e}", exc_info=True
+                                    f"Failed to analyze tweet {tweet.id}: {e}",
+                                    exc_info=True,
                                 )
                                 return Result(
                                     success=False,
@@ -114,23 +123,23 @@ class Service():
                         checkpoint.save(i + len(batch))
                         logger.info(f"Checkpoint saved at index {i + len(batch)}")
 
-            logger.info(f"Analysis complete. Results written to {settings.processed_results_path}")
+            logger.info(
+                f"Analysis complete. Results written to {settings.processed_results_path}"
+            )
             return Result(success=True, count=analyzed_count)
         except Exception as e:
             logger.error(f"an error occurred: {e}")
             return Result(
-                    success=False,
-                    count=analyzed_count,
-                    error_type="analysis_failed",
-                    error_message=str(e),)
-            
-    
-    
-            
+                success=False,
+                count=analyzed_count,
+                error_type="analysis_failed",
+                error_message=str(e),
+            )
+
+
 if __name__ == "__main__":
-    app = Service()
+    app = AuditService()
     # data = app.extract_tweet_from_json()
     # app.write_tweets_from_json_to_csv(data)
     # app.read_processed_csv_waiting_for_analysis()
     app.analyze_tweets()
-    

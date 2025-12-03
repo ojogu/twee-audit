@@ -5,7 +5,7 @@ import time
 from google import genai
 from google.genai.types import GenerateContentConfig
 from config import env_config
-from .application_exception import EnvironmentVariableError
+from src.application_exception import EnvironmentVariableError, APIerror
 from prompt import SYSTEM_PROMPT
 from schema import AgentResponse
 from config import setup_logger
@@ -108,6 +108,10 @@ class AI_Setup():
         except EnvironmentVariableError as e:
             logger.error(f"Environment variable error: {e}")
             raise
+        except RuntimeError as e:
+            logger.error(f"API connection failed: {e}")
+            raise APIerror("API connection failed")
+        
         except Exception as e:
             logger.exception(f"An error occurred during Gemini content generation or response validation: {e}")
             raise Exception(f"Failed to parse tweets with AI: {e}") from e

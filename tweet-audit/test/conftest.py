@@ -2,7 +2,7 @@ import pytest
 from src.config import Settings, Config
 from src.ai_setup import AI_Setup
 from pathlib import Path
-from src.schema import Tweets
+from src.schema import Tweets, AgentResponse
 
 TESTDATA_DIR = Path(__file__).parent / "test_data"
 
@@ -22,12 +22,15 @@ def settings():
 def test_tweet_data():
     return Tweets(
         id="1234",
-        content="my name is ojogu",
+        content="I want to be a cracked Engineer",
     ).model_dump()
     
 @pytest.fixture
 def test_system_prompt():
     return "test system prompt"
+
+
+
 
 
 

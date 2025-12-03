@@ -1,37 +1,56 @@
-#the cli module that handles user interaction with the application
+# the cli module that handles user interaction with the application
 
 import argparse
-from application import Application
+
+from config import setup_logger
+
+from src.service import AuditService
+
+import sys
+logger = setup_logger(__name__, "cli.log")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="a command line service to handle extraction and analysis of X tweets from archives",
-        formatter_class=argparse.RawTextHelpFormatter #Keeps all whitespace exactly as written
+        formatter_class=argparse.RawTextHelpFormatter,
     )
 
     parser.add_argument(
-            "command", #variable that stores the command passed
-            nargs="?", #number of arguments to consume (? is for 0 or 1 value)
-            choices=["extract-tweets", "analyze-tweets"],
-            help="Command to execute",
-        )
+        "command",
+        nargs="?",
+        choices=["extract-tweets", "analyze-tweets"],
+        help="Command to execute",
+    )
     args = parser.parse_args()
 
     if not args.command:
         parser.print_help()
         return
-    
-    app = Application()
+
+    app = AuditService()
     if args.command == "extract-tweets":
-        data = app.extract_tweets() 
+        logger.info("Starting tweet extraction")
+        data = app.extract_tweets()
         if not data.success:
-            print(f"Error occured: {data.error_message}")
-        print(f"successfully extracted: {data.count}")    
-        
-    if args.command == "analyze-tweets":
-        app.analyze_tweets()
+            logger.error(f"Extraction failed: {data.error_message}")
+            print(f"Error occurred: {data.error_message}")
+            sys.exit(1)
+        else:
+            logger.info(f"Successfully extracted {data.count} tweets")
+            print(f"Successfully extracted: {data.count}")
+
+    elif args.command == "analyze-tweets":
+        logger.info("Starting tweet analysis")
+        data = app.analyze_tweets()
         if not data.success:
-            print(f"an error occured: {data.error_message}")
-        print(f"successfully analyized: {data.count} tweets") 
-        
+            logger.error(f"Analysis failed: {data.error_message}")
+            print(f"An error occurred: {data.error_message}")
+            sys.exit(1)
+        else:
+            logger.info(f"Successfully analyzed {data.count} tweets")
+            print(f"Successfully analyzed: {data.count} tweets")
+
+
 if __name__ == "__main__":
     main()
