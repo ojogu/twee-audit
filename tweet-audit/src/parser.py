@@ -12,7 +12,7 @@ logger = setup_logger(__name__, "parser.log")
 class Parser(ABC):
     #abstract parent class which enforces all child class implement this method
     @abstractmethod
-    def parse(self) -> list[Tweets]:
+    def parse(self) -> list[dict]:
         pass
     
 #keys in json
@@ -30,20 +30,14 @@ DELETE_TWEET = "deleted"
 FILE_ENCODING="utf=8"
 class JsonParser(Parser):
     #this class handles parsing the json to extract the id and full text field
-    def __init__(self, file_path:str)->dict:
+    def __init__(self, file_path:str):
         self.file_path = file_path
     
 
-    def parse(self) -> list[Tweets]:
+    def parse(self) -> list[dict]:
         try:
-            dir_created, file_created = ensure_dir_and_file(self.file_path)
-            if dir_created:
-                logger.info(f"Directory for {self.file_path} was created.")
-            if file_created:
-                logger.info(f"File {self.file_path} was created.")
-            
             if not Path(self.file_path).exists():
-                logger.error(f"File {self.file_path} does not exist after ensure_dir_and_file.")
+                logger.error(f"File {self.file_path} does not exist.")
                 raise FileNotFoundError(f"File not found or could not be created: {self.file_path}")
 
             with open(self.file_path, encoding=FILE_ENCODING) as f:
@@ -71,7 +65,7 @@ class JsonParser(Parser):
 class CSVparser(Parser):
     def __init__(self, file_path):
         self.file_path = file_path
-    def parse(self) -> list[Tweets]:
+    def parse(self) -> list[dict]:
         #this method reads the CSV
         try:
             dir_created, file_created = ensure_dir_and_file(self.file_path)
@@ -87,17 +81,17 @@ class CSVparser(Parser):
             with open(self.file_path, "r", newline="", encoding=FILE_ENCODING) as f:
                 reader = csv.DictReader(f)
                 tweets_list = [
-                    Tweets(id=row[EXTRACTED_ID], content=row[EXTRACTED_CONTENT_FIELD])
+                    Tweets(id=row[EXTRACTED_ID], content=row[EXTRACTED_CONTENT_FIELD]).model_dump()
                     for row in reader
                 ]
                 logger.info(f"Successfully read {len(tweets_list)} rows from CSV file: {self.file_path}")
                 return tweets_list
         except FileNotFoundError as e:
             logger.error(f"File not found error during CSV parsing: {e}")
-            raise
+            raise 
         except KeyError as e:
             logger.error(f"Missing key in CSV header: {e}. Expected '{EXTRACTED_ID}' and '{EXTRACTED_CONTENT_FIELD}'.")
-            raise ValueError(f"Missing expected column in CSV: {e}") from e
+            raise AttributeError(f"Missing expected column in CSV: {e}") from e
         except Exception as e:
             logger.exception(f"An unexpected error occurred while parsing CSV {self.file_path}")
             raise Exception(f"Failed to parse CSV {self.file_path}: {e}") from e
@@ -142,7 +136,7 @@ class CSVwriter():
         return False
              
     
-    def write_tweets(self, tweets: List[Tweets]):
+    def write_tweets(self, tweets: List[dict]):
         """
         Writes the id and content from a list of Tweets into the CSV file.
         """
@@ -168,7 +162,7 @@ class CSVwriter():
             raise Exception(f"Failed to write tweets to CSV: {e}") from e
 
     
-    def write_analysed_tweets(self, **tweet_data: AnalysisResult):
+    def write_analysed_tweets(self, **tweet_data: dict):
         """
         Writes the analysis result of a tweet to the CSV file.
         """
@@ -228,7 +222,7 @@ class Checkpoint:
             return int(content)
         except ValueError as e:
             raise ValueError(
-                f"Corrupted checkpoint file {self.path}: expected integer, got '{content}'"
+                f"Corrupted checkpoint file {self.file_path}: expected integer, got '{content}'"
             ) from e
 
     def save(self, tweet_index: int) -> None:

@@ -65,7 +65,7 @@ def test_handle_extact_errors_gracefully(
     mock_audit_class, capsys, error_type, error_message
 ):
     mock_instance = mock_audit_class.return_value
-    mock_instance.extact_tweets.return_value = Result(
+    mock_instance.extract_tweets.return_value = Result(
         success=False, error_type=error_type, error_message=error_message
     )
     sys.argv = ["main.py", "extract-tweets"]
