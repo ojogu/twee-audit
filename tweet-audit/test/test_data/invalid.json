@@ -1,0 +1,16 @@
+{
+    "tweets": [
+        {
+            "id": 123,
+            "text": "Hello world",
+            "created_at": "2024-01-01"
+        },
+        {
+            "id": 456,
+            "text": "Missing comma above"
+            "user": "testuser"
+        }
+    ],
+    "count": 2,
+    "status": "incomplete"
+}
